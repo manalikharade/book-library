@@ -46,22 +46,19 @@ The first run will be slower due to building images. Subsequent runs will be fas
 
 ### Backend Setup
 
-1. **Create Python environment:**
-   ```bash
-   cd book-library
-   python -m venv myenv
-   source myenv/bin/activate  # On Windows: myenv\Scripts\activate
-   ```
+### 
+
+1. **Install uv:**
+   Refer https://pydevtools.com/handbook/how-to/how-to-install-uv-on-windows/ for uv installation.
 
 2. **Install dependencies:**
    ```bash
-   cd backend
-   pip install -r requirements.txt
+   cd book-library
+   uv sync
    ```
 
 3. **Setup database:**
    - Ensure PostgreSQL is running on localhost:5432
-   - Update `DATABASE_URL` in `app/config.py` if needed
 
 4. **Create sample data (optional):**
    ```bash
@@ -72,7 +69,7 @@ The first run will be slower due to building images. Subsequent runs will be fas
 5. **Start backend server:**
    ```bash
    # From book-library directory
-   python -m uvicorn app.main:app --reload --port 8000
+   uv run uvicorn app.main:app --host 0.0.0.0
    ```
    
    API will be available at http://localhost:8000
@@ -184,6 +181,8 @@ The first run will be slower due to building images. Subsequent runs will be fas
 - borrowed_date (datetime)
 - returned_date (datetime, nullable)
 - is_active (boolean)
+- due_date
+- fine
 
 ## Frontend Technologies
 
@@ -264,12 +263,11 @@ kill -9 <PID>
 
 **Database connection errors:**
 - Ensure PostgreSQL is running
-- Check DATABASE_URL in config.py
 - Verify credentials match .env file
 
 **Import errors:**
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ### Frontend Issues
@@ -315,8 +313,8 @@ npm install
 
 **Backend:**
 ```bash
-pip install -r requirements.txt
-gunicorn app.main:app --bind 0.0.0.0:8000
+uv sync
+uv run uvicorn app.main:app --host 0.0.0.0
 ```
 
 **Frontend:**
