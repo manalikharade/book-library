@@ -1,0 +1,70 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Database
+*.db
+book_library.db
+postgres_data/
+
+# Node
+node_modules/
+.next/
+frontend/node_modules/
+
+# Environment
+.env
+.env.local
+
+# Docker
+docker-compose.override.yml
+Dockerfile.dev
+
+# Documentation
+docs/_build/
+site/
+
+# Other
+*.log
+.mypy_cache/
+.dmypy.json
+dmypy.json
