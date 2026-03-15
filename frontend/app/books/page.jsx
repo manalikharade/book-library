@@ -1,63 +1,83 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { bookApi } from '@/lib/api'
 import BookForm from '@/components/BookForm'
 import BookTable from '@/components/BookTable'
 
+const PAGE_SIZE = 10
+
 export default function BooksPage() {
   const [books, setBooks] = useState([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [editingBook, setEditingBook] = useState(null)
 
-  useEffect(() => {
-    fetchBooks()
-  }, [])
-
-  const fetchBooks = async () => {
+  const fetchBooks = useCallback(async (pageNum = page) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await bookApi.getAllBooks()
-      setBooks(response.data)
+      const skip = (pageNum - 1) * PAGE_SIZE
+      const response = await bookApi.getBooks({ skip, limit: PAGE_SIZE })
+      const data = response.data?.items ?? response.data
+      const totalCount = response.data?.total ?? (Array.isArray(data) ? data.length : 0)
+      setBooks(Array.isArray(data) ? data : [])
+      setTotal(totalCount)
     } catch (err) {
-      setError(err.message || 'Failed to load books')
+      setError(err.response?.data?.detail || err.message || 'Failed to load books')
       console.error('Error fetching books:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [page])
+
+  useEffect(() => {
+    fetchBooks(page)
+  }, [page, fetchBooks])
 
   const handleAddBook = async (formData) => {
     try {
+      setSubmitting(true)
+      setError(null)
       await bookApi.createBook(formData)
       setShowForm(false)
-      await fetchBooks()
+      await fetchBooks(page)
     } catch (err) {
-      setError(err.message || 'Failed to create book')
+      setError(err.response?.data?.detail || err.message || 'Failed to create book')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleUpdateBook = async (bookId, formData) => {
     try {
+      setSubmitting(true)
+      setError(null)
       await bookApi.updateBook(bookId, formData)
       setEditingBook(null)
-      await fetchBooks()
+      await fetchBooks(page)
     } catch (err) {
-      setError(err.message || 'Failed to update book')
+      setError(err.response?.data?.detail || err.message || 'Failed to update book')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleDeleteBook = async (bookId) => {
-    if (confirm('Are you sure you want to delete this book?')) {
-      try {
-        await bookApi.deleteBook(bookId)
-        await fetchBooks()
-      } catch (err) {
-        setError(err.message || 'Failed to delete book')
-      }
+    if (!confirm('Are you sure you want to delete this book?')) return
+    try {
+      setSubmitting(true)
+      setError(null)
+      await bookApi.deleteBook(bookId)
+      await fetchBooks(page)
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || 'Failed to delete book')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -66,13 +86,17 @@ export default function BooksPage() {
     setEditingBook(null)
   }
 
+  const isBusy = loading || submitting
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-800">Books Management</h2>
         <button
+          type="button"
           onClick={() => setShowForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
+          disabled={isBusy}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           + Add Book
         </button>
@@ -87,23 +111,29 @@ export default function BooksPage() {
       {(showForm || editingBook) && (
         <BookForm
           book={editingBook}
-          onSubmit={editingBook ? 
-            (data) => handleUpdateBook(editingBook.id, data) : 
-            handleAddBook
-          }
+          onSubmit={editingBook ? (data) => handleUpdateBook(editingBook.id, data) : handleAddBook}
           onCancel={handleCancel}
+          submitting={submitting}
         />
       )}
 
-      {loading ? (
-        <div className="text-center py-10">Loading books...</div>
-      ) : (
-        <BookTable
-          books={books}
-          onEdit={(book) => setEditingBook(book)}
-          onDelete={handleDeleteBook}
-        />
-      )}
+      <BookTable
+        books={books}
+        onEdit={(book) => setEditingBook(book)}
+        onDelete={handleDeleteBook}
+        loading={loading}
+        actionsDisabled={submitting}
+        pagination={
+          total > PAGE_SIZE
+            ? {
+                page,
+                pageSize: PAGE_SIZE,
+                total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
+      />
     </div>
   )
 }

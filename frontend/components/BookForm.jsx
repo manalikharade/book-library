@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 
-export default function BookForm({ book, onSubmit, onCancel }) {
+export default function BookForm({ book, onSubmit, onCancel, submitting = false }) {
   const [formData, setFormData] = useState({ title: '', author: '' })
   const [errors, setErrors] = useState({})
 
@@ -30,7 +30,7 @@ export default function BookForm({ book, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (validate()) {
+    if (validate() && !submitting) {
       onSubmit(formData)
       setFormData({ title: '', author: '' })
     }
@@ -79,14 +79,16 @@ export default function BookForm({ book, onSubmit, onCancel }) {
         <div className="flex gap-4 pt-4">
           <button
             type="submit"
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium"
+            disabled={submitting}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {book ? 'Update' : 'Add'} Book
+            {submitting ? 'Saving...' : (book ? 'Update' : 'Add') + ' Book'}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition font-medium"
+            disabled={submitting}
+            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>

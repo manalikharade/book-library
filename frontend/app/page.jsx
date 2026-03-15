@@ -30,15 +30,17 @@ export default function DashboardPage() {
         memberApi.getAllMembers(),
       ])
 
-      setActiveBorrowings(borrowingsRes.data)
+      setActiveBorrowings(borrowingsRes.data ?? [])
+      const booksData = booksRes.data?.items ?? booksRes.data
+      const membersData = membersRes.data?.items ?? membersRes.data
       setStats({
-        totalBooks: booksRes.data.length,
-        availableBooks: availableRes.data.length,
-        totalMembers: membersRes.data.length,
-        activeBorrowings: borrowingsRes.data.length,
+        totalBooks: booksRes.data?.total ?? (Array.isArray(booksData) ? booksData.length : 0),
+        availableBooks: Array.isArray(availableRes.data) ? availableRes.data.length : 0,
+        totalMembers: membersRes.data?.total ?? (Array.isArray(membersData) ? membersData.length : 0),
+        activeBorrowings: Array.isArray(borrowingsRes.data) ? borrowingsRes.data.length : 0,
       })
     } catch (err) {
-      setError(err.message || 'Failed to load dashboard data')
+      setError(err.response?.data?.detail || err.message || 'Failed to load dashboard data')
       console.error('Dashboard error:', err)
     } finally {
       setLoading(false)

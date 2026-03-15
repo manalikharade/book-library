@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-export default function BorrowForm({ availableBooks, members, onSubmit }) {
+export default function BorrowForm({ availableBooks, members, onSubmit, submitting = false }) {
   const [formData, setFormData] = useState({ book_id: '', member_id: '' })
   const [errors, setErrors] = useState({})
 
@@ -24,7 +24,7 @@ export default function BorrowForm({ availableBooks, members, onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (validate()) {
+    if (validate() && !submitting) {
       onSubmit(formData)
       setFormData({ book_id: '', member_id: '' })
     }
@@ -80,9 +80,10 @@ export default function BorrowForm({ availableBooks, members, onSubmit }) {
 
         <button
           type="submit"
-          className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition font-medium"
+          disabled={submitting}
+          className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Record Borrowing
+          {submitting ? 'Recording...' : 'Record Borrowing'}
         </button>
       </form>
     </div>

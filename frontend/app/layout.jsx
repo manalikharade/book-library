@@ -1,5 +1,6 @@
 import '@/app/globals.css'
 import Navbar from '@/components/Navbar'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 export const metadata = {
   title: 'Book Library Management',
@@ -12,7 +13,9 @@ export default function RootLayout({ children }) {
       <body className="bg-gray-50">
         <Navbar />
         <div className="container mx-auto py-8">
-          {children}
+          <ErrorBoundary onRetry>
+            {children}
+          </ErrorBoundary>
         </div>
       </body>
     </html>

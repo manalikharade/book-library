@@ -1,8 +1,13 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import and_
+import logging
 from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
 from . import models, schemas
 from .config import get_settings
+
+logger = logging.getLogger(__name__)
 
 # ============ BOOK CRUD OPERATIONS ============
 
@@ -19,13 +24,16 @@ def get_book(db: Session, book_id: int):
 def get_all_books(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Book).offset(skip).limit(limit).all()
 
+def count_books(db: Session) -> int:
+    return db.query(models.Book).count()
+
 def get_available_books(db: Session):
     return db.query(models.Book).filter(models.Book.available == True).all()
 
 def update_book(db: Session, book_id: int, book_update: schemas.BookUpdate):
     db_book = db.query(models.Book).filter(models.Book.id == book_id).first()
     if db_book:
-        update_data = book_update.dict(exclude_unset=True)
+        update_data = book_update.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(db_book, key, value)
         db.commit()
@@ -58,10 +66,13 @@ def get_member(db: Session, member_id: int):
 def get_all_members(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Member).offset(skip).limit(limit).all()
 
+def count_members(db: Session) -> int:
+    return db.query(models.Member).count()
+
 def update_member(db: Session, member_id: int, member_update: schemas.MemberUpdate):
     db_member = db.query(models.Member).filter(models.Member.id == member_id).first()
     if db_member:
-        update_data = member_update.dict(exclude_unset=True)
+        update_data = member_update.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(db_member, key, value)
         db.commit()
@@ -115,26 +126,22 @@ def return_book(db: Session, borrowing_id: int):
     borrowing = db.query(models.Borrowing).filter(models.Borrowing.id == borrowing_id).first()
     if not borrowing or not borrowing.is_active:
         return None
-    
-    # Get settings for fine calculation
+
     settings = get_settings()
     returned_date = datetime.now(tz=timezone.utc)
-    
-    # Calculate fine if the book is returned late
-    fine = 0.0
-    if returned_date.date() > borrowing.due_date.date():
-        fine = calculate_fine(borrowing, returned_date)
-    
-    # Update borrowing record
+    fine = calculate_fine(borrowing, returned_date)
+
+    # Update borrowing record (explicit assign so ORM persists fine)
     borrowing.returned_date = returned_date
     borrowing.is_active = False
-    borrowing.fine = fine
-    
-    # Mark book as available
+    borrowing.fine = float(fine)
+    db.add(borrowing)
+
     book = db.query(models.Book).filter(models.Book.id == borrowing.book_id).first()
     if book:
         book.available = True
-    
+        db.add(book)
+
     db.commit()
     db.refresh(borrowing)
     return borrowing
@@ -145,16 +152,21 @@ def get_borrowing(db: Session, borrowing_id: int):
 def get_all_borrowings(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Borrowing).offset(skip).limit(limit).all()
 
+def count_borrowings(db: Session) -> int:
+    return db.query(models.Borrowing).count()
+
 def calculate_fine(borrowing: models.Borrowing, ref_date: datetime):
-    """Calculate fine for a borrowing based on current date and settings"""
-    
+    """Calculate fine for a borrowing based on return date and settings.
+    Late days = calendar days after due date (no off-by-one).
+    """
     settings = get_settings()
-    if ref_date.date() > borrowing.due_date.date():
-            late_days = (ref_date.date() - borrowing.due_date.date()).days + 1
-            fine = late_days * settings.fine_per_day
-            return min(fine, settings.max_fine)
-    else:
+    due = borrowing.due_date.date() if hasattr(borrowing.due_date, 'date') else borrowing.due_date
+    ref = ref_date.date() if hasattr(ref_date, 'date') else ref_date
+    if ref <= due:
         return 0.0
+    late_days = (ref - due).days
+    fine = late_days * settings.fine_per_day
+    return min(fine, settings.max_fine)
 
 def get_active_borrowings(db: Session):
     """Get all currently active borrowings (not yet returned)"""

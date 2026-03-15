@@ -7,11 +7,11 @@ class Settings(BaseSettings):
     """Application settings from environment variables"""
     
     # Database
-    db_user: str 
-    db_password: str
-    db_name: str
-    db_port: int
-    db_host: str
+    db_user: str = "postgres"
+    db_password: str = "postgres"
+    db_name: str = "book_library"
+    db_port: int = 5432
+    db_host: str = "localhost"
     
     # API
     api_title: str = "Book Library API"

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-export default function ReturnForm({ activeBorrowings, onSubmit }) {
+export default function ReturnForm({ activeBorrowings, onSubmit, submitting = false }) {
   const [formData, setFormData] = useState({ borrowing_id: '' })
   const [errors, setErrors] = useState({})
 
@@ -23,7 +23,7 @@ export default function ReturnForm({ activeBorrowings, onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (validate()) {
+    if (validate() && !submitting) {
       onSubmit(formData)
       setFormData({ borrowing_id: '' })
     }
@@ -61,9 +61,10 @@ export default function ReturnForm({ activeBorrowings, onSubmit }) {
 
         <button
           type="submit"
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition font-medium"
+          disabled={submitting}
+          className="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Record Return
+          {submitting ? 'Recording...' : 'Record Return'}
         </button>
       </form>
     </div>

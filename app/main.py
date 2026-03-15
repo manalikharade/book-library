@@ -1,10 +1,16 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import get_settings
 from app.database import init_db
+from app.logging_config import setup_logging
 from app.routers import books, borrowing, members
 
+logger = logging.getLogger(__name__)
+setup_logging()
 settings = get_settings()
 
 app = FastAPI(
@@ -34,10 +40,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize database
 @app.on_event("startup")
 def startup():
     init_db()
+    logger.info("Application startup complete")
+
+
+@app.exception_handler(SQLAlchemyError)
+def handle_sqlalchemy_error(request, exc):
+    logger.exception("Database error: %s", exc)
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "A database error occurred. Please try again later."},
+    )
 
 # Include routers
 app.include_router(books.router, prefix="/api/books", tags=["books"])

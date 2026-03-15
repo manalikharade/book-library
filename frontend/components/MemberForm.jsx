@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 
-export default function MemberForm({ member, onSubmit, onCancel }) {
+export default function MemberForm({ member, onSubmit, onCancel, submitting = false }) {
   const [formData, setFormData] = useState({
     name: '',
     contact_no: '',
@@ -39,7 +39,7 @@ export default function MemberForm({ member, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (validate()) {
+    if (validate() && !submitting) {
       onSubmit(formData)
       setFormData({ name: '', contact_no: '', address: '' })
     }
@@ -105,14 +105,16 @@ export default function MemberForm({ member, onSubmit, onCancel }) {
         <div className="flex gap-4 pt-4">
           <button
             type="submit"
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium"
+            disabled={submitting}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {member ? 'Update' : 'Add'} Member
+            {submitting ? 'Saving...' : (member ? 'Update' : 'Add') + ' Member'}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition font-medium"
+            disabled={submitting}
+            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
